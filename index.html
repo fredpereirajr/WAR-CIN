@@ -456,6 +456,9 @@
     APIGame.primeiraRodada = false; //Estado restrito
     APIGame.estado; //Ataque, Distribuir, Fortificar
     APIGame.paradaPrimeiraRodada = 0; // variável que marca a condição de parada da primeira fase do jogo.
+    APIGame.alvoAnterior = false;
+    APIGame.paisAnterior = false;
+    APIGame.selecionarPaises = []; /* Guarda 2 países*/
 
 /*-----------------------------------------Elementos HTML --------------------------------------------------------*/
   
@@ -592,63 +595,60 @@
         
     };
 
+    function alterarSectionInfoJogador(jogadorDaVez) {
+
+      jogadorDaVez.territorios.forEach(function (country) {
+          jogadorDaVez.totalTropas +=  country.army;
+      })
+        
+      let nomeJogador = divInfoJogador.children[0];
+      nomeJogador.textContent = jogadorDaVez.nome;
+      let fase = divInfoJogador.children[1];
+      fase.textContent = `Fase: ${APIGame.estado}`;
+
+      let fortificao; 
+      if (jogadorDaVez.territorios.length < 6) {
+        fortificao = 3;
+      }else {
+        fortificao = parseInt(jogadorDaVez.territorios.length/2);
+      }
+
+      APIGame.jogadores[0].tropasRodada = fortificao;
+
+      let fortificaoDiv = divInfoJogador.children[2];
+      fortificaoDiv.textContent = "Distribuir: " + fortificao;   /* Tem que alterar na tela quando o cara clicar no pais para distribuir */
+
+      let fortificaoTotalDiv = divInfoJogador.children[3];
+      fortificaoTotalDiv.textContent = "Total de Tropas: " + jogadorDaVez.totalTropas;
+
+      if (jogadorDaVez.cor.hexadecimal == "#000000") { //Se o jogadorAtual for a cor preta, tem que mudar a cor da font
+        sectionInfoJogador.style.color = "#ffffff";
+      }else {
+        sectionInfoJogador.style.color = "#000000";
+      };
+
+      sectionInfoJogador.style.background = jogadorDaVez.cor.hexadecimal;
+
+      divInfoJogador.style.display = "block";
+      
+    }
+
     function proxJogador (e) {
       APIGame.estado = "Fortificar" //Toda rodada começa pela fase de Fortificação.
 
       let jogadorDaVez = APIGame.jogadores[0];
      
-     
       if (APIGame.primeiraRodada == true) {
-        
+        alterarSectionInfoJogador(jogadorDaVez);
+        APIGame.paradaPrimeiraRodada++;
 
-        jogadorDaVez.territorios.forEach(function (country) {
-          jogadorDaVez.totalTropas +=  country.army;
-        })
-        
-        
-        let nomeJogador = divInfoJogador.children[0];
-        nomeJogador.textContent = jogadorDaVez.nome;
-        let fase = divInfoJogador.children[1];
-        fase.textContent = `Fase: ${APIGame.estado}`;
-
-        let fortificao; 
-        if (jogadorDaVez.territorios.length < 6) {
-          fortificao = 3;
-        }else {
-          fortificao = parseInt(jogadorDaVez.territorios.length/2);
-        }
-
-        APIGame.jogadores[0].tropasRodada = fortificao;
-
-        let fortificaoDiv = divInfoJogador.children[2];
-        fortificaoDiv.textContent = "Distribuir: " + fortificao;   /* Tem que alterar na tela quando o cara clicar no pais para distribuir */
-
-        let fortificaoTotalDiv = divInfoJogador.children[3];
-        fortificaoTotalDiv.textContent = "Total de Tropas: " + jogadorDaVez.totalTropas;
-
-        if (jogadorDaVez.cor.hexadecimal == "#000000") { //Se o jogadorAtual for a cor preta, tem que mudar a cor da font
-          sectionInfoJogador.style.color = "#ffffff";
-        }else {
-          sectionInfoJogador.style.color = "#000000";
-        };
-
-        sectionInfoJogador.style.background = jogadorDaVez.cor.hexadecimal;
-
-        divInfoJogador.style.display = "block";
-
-        APIGame.paradaPrimeiraRodada++
-        if (APIGame.paradaPrimeiraRodada == APIGame.qtJogadores) {
-          APIGame.primeiraRodada = false;
-        }
-        
-      } else {
-        
-        //OUTRAS FASES
+      }else {
+        alterarSectionInfoJogador(jogadorDaVez);
       }
     }
 
     function estadoFortificar (e) {
-     
+      e.preventDefault()
       APIGame.countries.forEach(country => {
         
         if(e.target.id == country.name &&  APIGame.jogadores[0].tropasRodada > 0 && country.owner == APIGame.jogadores[0].nome ){
@@ -664,12 +664,69 @@
           //Once reserve is empty, battle stage can start
           if(APIGame.jogadores[0].tropasRodada == 0 &&  APIGame.primeiraRodada == false){
             APIGame.estado = "Ataque";
-            console.log("ACABOU FORTIFICAÇÃO");
             divInfoJogador.children[1].textContent = `Fase: ${APIGame.estado}`;
             //turnInfoMessage.textContent = "Choose a country to attack from then a target";
+            alert("FASE DE ATAQUE");
           }
         }
       })
+    }
+
+    function resetSelecao () {
+
+      APIGame.selecionarPaises.forEach(function (pais) {
+        pais.classList.remove('flash');
+      });
+
+      APIGame.selecionarPaises = [];
+      APIGame.alvoAnterior = false;
+      APIGame.paisAnterior = false;
+      
+    }
+
+    function estadoAtaque (e) {
+
+      if (APIGame.selecionarPaises.length >= 2 ) {
+        resetSelecao();
+      }
+    
+      APIGame.countries.forEach(country => {
+
+        if(e.target.id == country.name) {
+
+          if (APIGame.alvoAnterior == false && country.owner == APIGame.jogadores[0].nome && country.army > 1) {
+            e.target.classList.add('flash');
+            APIGame.alvoAnterior = e.target;
+            APIGame.selecionarPaises.push(APIGame.alvoAnterior);
+          } else if (APIGame.alvoAnterior != false && country.owner == APIGame.jogadores[0].nome && country.army > 1) {
+            resetSelecao();
+            e.target.classList.add('flash');
+            APIGame.alvoAnterior = e.target;
+            APIGame.selecionarPaises.push(APIGame.alvoAnterior);
+          } 
+          
+          if(APIGame.paisAnterior){
+
+            if(APIGame.paisAnterior.name != country.name && APIGame.paisAnterior.owner != country.owner && APIGame.paisAnterior.owner == APIGame.jogadores[0].nome){
+              
+              APIGame.paisAnterior.neighbours.forEach( function (neighbour, index)  { 
+                if(neighbour == country.name && neighbour.owner != country.name && APIGame.paisAnterior.army > 1){       
+                  //return this.battle(this.prevCountry, country, this.player, 0);     
+                  e.target.classList.add('flash');
+                  APIGame.selecionarPaises.push(e.target);
+                }                
+              });
+
+            }      
+          }
+
+          if (APIGame.alvoAnterior != false && APIGame.alvoAnterior.id == country.name) {
+            APIGame.paisAnterior = country;
+          }
+          
+        }
+      });   
+    
     }
 
     function algoritmoCorJogador (arrayCoresTemp) {
@@ -683,19 +740,34 @@
       
       if(APIGame.estado == "Distribuir"){
   
-      }else if(APIGame.estado === "Ataque"){
-        //this.attack(e);
-      }else if (APIGame.estado === "Fortificar") {
+      }else if(APIGame.estado == "Ataque"){
+        estadoAtaque(e);
+      }else if (APIGame.estado == "Fortificar") {
         estadoFortificar(e);
       }
 
     }
 
     function finalizarTurno () {
+      
+      if (APIGame.paradaPrimeiraRodada == APIGame.qtJogadores) {
+        APIGame.primeiraRodada = false;
+      }
+
       let jogadorProcessado = APIGame.jogadores[0];
       APIGame.jogadores.splice(0,1); //Removendo jogador da vez fila de ordenação
       APIGame.jogadores.push(jogadorProcessado); /*Colocando o jogador da vez na ultima posição da fila (vamos processar ele agora)*/
+
       proxJogador()
+    }
+
+    function algoritmoAtaque () {
+      if (APIGame.estado == "Ataque") {
+         //FAZER O ALGORITMO DE ATAQUE !!!!!!!!!!!!!!
+      }else {
+        alert("NECESSÁRIO ESTAR NA FASE DE ATAQUE");
+      }
+
     }
 
 
@@ -703,7 +775,9 @@
   botaoSubmeteQtJogadores.addEventListener("click",gerarInputsNomesJogador);
   botaoFinalizarJogada.addEventListener("click", finalizarTurno);
   mapa.addEventListener("mousedown", handleClick);
+  botaoAtaque.addEventListener("click", algoritmoAtaque);
     
+  /*Alterando cor de borda do país.*/
   paises.forEach(function (pais) {
     pais.style.stroke = "#fbfbfb"
   })

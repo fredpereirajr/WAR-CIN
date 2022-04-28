@@ -19,11 +19,8 @@
 
 </section>
 
-<div id="mapa" >
-
-  
-
-<svg width="749.81909" height="519.06781">
+<div id="mapaConteiner" >
+<svg id="mapa" width="749.81909" height="519.06781">
   <defs id="defs5">
     <linearGradient id="linearGradient11165">
       <stop id="stop11167" offset="0" style="stop-color:#000000;stop-opacity:0;"/>
@@ -375,15 +372,18 @@
   <button id="botao-ataque" class="button-controle-jogo">Atacar</button>
   <button id="botao-cancelar-selecao" class="button-controle-jogo">Cancelar Selecao</button>
   <button id="botao-distribuir" class="button-controle-jogo">Distribuir</button>
-  <button id="botao-finalizar" class="button-controle-jogo">Finalizar Jogada</button>
+  <button id="botao-finalizar" class="button-controle-jogo">Próximo Jogador</button>
 </div>
 </div>
 
 
-<section id="info-jogador" >
+<section id="info-jogador">
   <h1>Jogador Atual</h1>
   <div id="div-info-jogador">
-      <!-- Essa div receberá as informações dos jogadores -->
+    <h2>Nome</h2> <!--Nome-->
+    <div>Fase</div> <!--Fase atual-->
+    <div>Tropas</div> <!--Tropas disponíveis-->
+    <div>Total de Tropas</div> <!--quantidade de tropas total no jogo-->
   </div>
 </section>
 
@@ -445,16 +445,28 @@
     APIGame.algoritmoRandomico = function randomNumberInterval(a, b) {
       return Math.floor(Math.random() * (b - a + 1)) + a
     };
-    APIGame.arrayCoresJogadores = ["#ffffff", "#f90005", "#000000", "#1300c2", "#fffe00", "#01ca00"] /*branca, vermelha, preta, azul, amarela e verde*/
+    APIGame.arrayCoresWar = [
+      {cor: "vermelho", hexadecimal:"#f90005", index:0},
+      {cor: "roxo", hexadecimal:"#db00eb", index:1},
+      {cor: "preto", hexadecimal:"#000000", index:2},
+      {cor: "azul", hexadecimal:"#1300c2", index:3},
+      {cor: "laranja", hexadecimal:"#ff8000", index:4},
+      {cor: "verde", hexadecimal:"#01ca00", index:5}
+    ]
+    APIGame.primeiraRodada = false; //Estado restrito
+    APIGame.estado; //Ataque, Distribuir, Fortificar
+    APIGame.paradaPrimeiraRodada = 0; // variável que marca a condição de parada da primeira fase do jogo.
 
 /*-----------------------------------------Elementos HTML --------------------------------------------------------*/
   
+  let mapa = document.getElementById('mapa');
   let paises = document.querySelectorAll('.area')     //Todos os países.
   let divInfoJogadores = document.createElement('div-info-jogador');
   let conteudoDivConfig = document.getElementById('content-config'); //Div da configuração do jogo
   let inputQtJogadores = document.getElementById('input-numero-jogadores');
   let sectionConfig = document.getElementById('configuracao-game');
   let sectionInfoJogador = document.getElementById('info-jogador');
+  let divInfoJogador = document.getElementById('div-info-jogador');
 
   /*Botões de controle */
   let botaoAtaque = document.getElementById('botao-ataque');
@@ -495,25 +507,28 @@
   function algoritmoInicializacaoJogo (e) {
     e.preventDefault();
 
+    APIGame.primeiraRodada = true;
+
     /*Ordenando os jogadores*/
-    let arrayCoresTemp =  APIGame.arrayCoresJogadores;
+    let arrayCoresTemp = [];
+    APIGame.arrayCoresWar.forEach(function (infoCor) {
+      arrayCoresTemp.push(infoCor);
+    });
 
     for (let index = 0; index < APIGame.qtJogadores; index++) {
-      let valueCor = algoritmoCorJogador(arrayCoresTemp);
+      let objetoCor = algoritmoCorJogador(arrayCoresTemp);
       let Nomejogador = document.getElementById(`jogador-${index}`).value;
-      APIGame.jogadores.push(new Jogador(Nomejogador, valueCor));
+      APIGame.jogadores.push(new Jogador(Nomejogador, objetoCor));
     }
 
     sectionConfig.remove(); //Remove a section de Criar jogo
 
-    APIGame.jogadores.sort(function(a, b){return a.cor.index - b.cor.index}); /* Ordena a vez de acordo com a cor do jogador*/
-    
+    APIGame.jogadores.sort(function(a, b){return b.cor.index - a.cor.index}); /* Ordena a vez de acordo com a cor do jogador*/
     
     /*DISTRIBUIÇÃO DOS PAÍSES ENTRE OS JOGADORES feito!*/
     let arrayJogadoresCores = [];
     APIGame.jogadores.forEach(function (jogador) {
-      arrayJogadoresCores.push(jogador.cor.hexadecimalCor);
-
+      arrayJogadoresCores.push(jogador.cor.hexadecimal);
     })
 
     let arrayJogadoresCoresTemp = [];
@@ -527,7 +542,7 @@
     countries.forEach(function (country, index) {
 
       if (arrayJogadoresCores.length == 0) {
-        /*Na distribuição inicial existe 2 restrições: quando o número de jogadores é igual a 4 ou 5. Para esses casos, 2 jogadores ficarão com 1 a mais na distribuição inicial dos territórios. Esse if trata isso. */
+        /* Na distribuição inicial existe 2 restrições: quando o número de jogadores é igual a 4 ou 5. Para esses casos, 2 jogadores ficarão com 1 a mais na distribuição inicial dos territórios. Esse if trata isso. */
         arrayJogadoresCores = arrayJogadoresCoresTemp;
         mediaQtPais++;
       }
@@ -537,7 +552,10 @@
       let indexJogador;
 
       APIGame.jogadores.forEach(function (jogador, i) {
-        if (jogador.cor.hexadecimalCor == corJogador) {
+        if (jogador.cor.hexadecimal == corJogador) {
+          country.owner = APIGame.jogadores[i].nome;  
+          country.color = APIGame.jogadores[i].cor.cor;    
+          country.army = 1;
           APIGame.jogadores[i].territorios.push(country);
           indexJogador = i;
         }
@@ -545,7 +563,7 @@
 
       paises.forEach(function (pais) {
         if (pais.id == country.name) {
-          pais.style.fill = APIGame.jogadores[indexJogador].cor.hexadecimalCor;
+          pais.style.fill = APIGame.jogadores[indexJogador].cor.hexadecimal;
         }
       });
 
@@ -555,62 +573,141 @@
 
     });
 
+    paises.forEach(function (elementoPaisHtml) {
+      elementoPaisHtml.nextElementSibling.textContent = 1;
+      elementoPaisHtml.nextElementSibling.style.fill = "#ffffff";
+      console.log(elementoPaisHtml.nextElementSibling);
+    })
+
     APIGame.jogadores.forEach(function (jogador) {
       console.log(jogador);
       console.log(jogador.territorios.length);
-    })
+    });
 
     alert("Jogo Criado!");
 
-    rodadaJogador();
+
+
+    proxJogador ();
         
     };
 
-    function algoritmoCorJogador(arrayCoresTemp) {
-      while(true) {
-        let indexCor = Math.floor(Math.random() * 6); //Gera números randomicos entre 0 e 5 (range do array de cores)
-        if (arrayCoresTemp[indexCor] != null) {
-          let valueCor = arrayCoresTemp[indexCor];
-          arrayCoresTemp[indexCor] = null;
-          return {
-            hexadecimalCor: valueCor,
-            index: indexCor
-          };
-        }
-
-      }
-        
-    };
-
-    function rodadaJogador (e) {
+    function proxJogador (e) {
+      APIGame.estado = "Fortificar" //Toda rodada começa pela fase de Fortificação.
 
       let jogadorDaVez = APIGame.jogadores[0];
-      APIGame.jogadores.splice(0,1); //Removendo jogador da vez fila de ordenação
-      APIGame.jogadores.push(jogadorDaVez); /*Colocando o jogador da vez na ultima posição da fila (vamos processar ele agora)*/
+     
+     
+      if (APIGame.primeiraRodada == true) {
+        
 
-      let h2NomeJogador = document.createElement('h2');
-      h2NomeJogador.textContent = jogadorDaVez.nome;
-      sectionInfoJogador.appendChild(h2NomeJogador);
-      if (jogadorDaVez.cor.hexadecimalCor == "#000000") { //Se o jogadorAtual for a cor preta, tem que mudar a cor da font
-        sectionInfoJogador.style.color = "#ffffff";
-      };
-      sectionInfoJogador.style.background = jogadorDaVez.cor.hexadecimalCor;
+        jogadorDaVez.territorios.forEach(function (country) {
+          jogadorDaVez.totalTropas +=  country.army;
+        })
+        
+        
+        let nomeJogador = divInfoJogador.children[0];
+        nomeJogador.textContent = jogadorDaVez.nome;
+        let fase = divInfoJogador.children[1];
+        fase.textContent = `Fase: ${APIGame.estado}`;
 
-      //ContinuaAqui.
+        let fortificao; 
+        if (jogadorDaVez.territorios.length < 6) {
+          fortificao = 3;
+        }else {
+          fortificao = parseInt(jogadorDaVez.territorios.length/2);
+        }
+
+        APIGame.jogadores[0].tropasRodada = fortificao;
+
+        let fortificaoDiv = divInfoJogador.children[2];
+        fortificaoDiv.textContent = "Distribuir: " + fortificao;   /* Tem que alterar na tela quando o cara clicar no pais para distribuir */
+
+        let fortificaoTotalDiv = divInfoJogador.children[3];
+        fortificaoTotalDiv.textContent = "Total de Tropas: " + jogadorDaVez.totalTropas;
+
+        if (jogadorDaVez.cor.hexadecimal == "#000000") { //Se o jogadorAtual for a cor preta, tem que mudar a cor da font
+          sectionInfoJogador.style.color = "#ffffff";
+        }else {
+          sectionInfoJogador.style.color = "#000000";
+        };
+
+        sectionInfoJogador.style.background = jogadorDaVez.cor.hexadecimal;
+
+        divInfoJogador.style.display = "block";
+
+        APIGame.paradaPrimeiraRodada++
+        if (APIGame.paradaPrimeiraRodada == APIGame.qtJogadores) {
+          APIGame.primeiraRodada = false;
+        }
+        
+      } else {
+        
+        //OUTRAS FASES
+      }
     }
 
+    function estadoFortificar (e) {
+     
+      APIGame.countries.forEach(country => {
+        
+        if(e.target.id == country.name &&  APIGame.jogadores[0].tropasRodada > 0 && country.owner == APIGame.jogadores[0].nome ){
+            
+          country.army += 1;
+          APIGame.jogadores[0].tropasRodada -= 1;   
+          APIGame.jogadores[0].totalTropas += 1;            
+                 
+          divInfoJogador.children[2].textContent = `Distribuir: ${APIGame.jogadores[0].tropasRodada}`;
+          divInfoJogador.children[3].textContent = `Total de Tropas: ${APIGame.jogadores[0].totalTropas}`;
+          e.target.nextElementSibling.textContent = country.army;
+        
+          //Once reserve is empty, battle stage can start
+          if(APIGame.jogadores[0].tropasRodada == 0 &&  APIGame.primeiraRodada == false){
+            APIGame.estado = "Ataque";
+            console.log("ACABOU FORTIFICAÇÃO");
+            divInfoJogador.children[1].textContent = `Fase: ${APIGame.estado}`;
+            //turnInfoMessage.textContent = "Choose a country to attack from then a target";
+          }
+        }
+      })
+    }
+
+    function algoritmoCorJogador (arrayCoresTemp) {
+      let indexCor = APIGame.algoritmoRandomico(0, arrayCoresTemp.length-1);
+      let infoCor = arrayCoresTemp[indexCor];
+      arrayCoresTemp.splice(indexCor, 1);
+      return infoCor;
+    }
+        
+    function handleClick(e){
+      
+      if(APIGame.estado == "Distribuir"){
+  
+      }else if(APIGame.estado === "Ataque"){
+        //this.attack(e);
+      }else if (APIGame.estado === "Fortificar") {
+        estadoFortificar(e);
+      }
+
+    }
+
+    function finalizarTurno () {
+      let jogadorProcessado = APIGame.jogadores[0];
+      APIGame.jogadores.splice(0,1); //Removendo jogador da vez fila de ordenação
+      APIGame.jogadores.push(jogadorProcessado); /*Colocando o jogador da vez na ultima posição da fila (vamos processar ele agora)*/
+      proxJogador()
+    }
 
 
 /*---------------------------------------------------ADD EVENTO--------------------------------------------------------*/
   botaoSubmeteQtJogadores.addEventListener("click",gerarInputsNomesJogador);
-  botaoFinalizarJogada.addEventListener("click", rodadaJogador)
+  botaoFinalizarJogada.addEventListener("click", finalizarTurno);
+  mapa.addEventListener("mousedown", handleClick);
     
-  
   paises.forEach(function (pais) {
-    pais.addEventListener("click", function () {
-      pais.style.fill = "#e70303";
-    });
-  });
+    pais.style.stroke = "#fbfbfb"
+  })
+  
       
     
   </script>

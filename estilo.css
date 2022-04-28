@@ -17,8 +17,10 @@
     margin-bottom: 20px;
 }
 
-#mapa {
-    background-color: aqua;
+#mapaConteiner {
+    background-image: url("backgroundwar.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
     display: inline-block;
 }
 
@@ -32,6 +34,9 @@
    
 }
 
+#div-info-jogador {
+    display: none;
+}
 
 #info-jogador h1{
     text-align: center;

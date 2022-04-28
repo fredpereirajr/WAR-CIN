@@ -1,0 +1,1 @@
+console.log(parseInt(8/10));

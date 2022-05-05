@@ -370,7 +370,8 @@
 
 <div id="controle-jogo" >
   <button id="botao-ataque" class="button-controle-jogo">Atacar</button>
-  <button id="botao-cancelar-selecao" class="button-controle-jogo">Cancelar Selecao</button>
+  <button id="botao-ataque-distribuir" class="button-controle-jogo">Ataque -> Distribuir</button>
+  <button id="botao-encerrar-ataque" class="button-controle-jogo">Encerrar Ataque</button>
   <button id="botao-distribuir" class="button-controle-jogo">Distribuir</button>
   <button id="botao-finalizar" class="button-controle-jogo">Próximo Jogador</button>
 </div>
@@ -459,6 +460,9 @@
     APIGame.alvoAnterior = false;
     APIGame.paisAnterior = false;
     APIGame.selecionarPaises = []; /* Guarda 2 países*/
+    APIGame.guardarPaisesConquista = [];
+    APIGame.limiteDistribuicaoAtaque = 0;
+   
 
 /*-----------------------------------------Elementos HTML --------------------------------------------------------*/
   
@@ -470,13 +474,15 @@
   let sectionConfig = document.getElementById('configuracao-game');
   let sectionInfoJogador = document.getElementById('info-jogador');
   let divInfoJogador = document.getElementById('div-info-jogador');
+  
 
   /*Botões de controle */
   let botaoAtaque = document.getElementById('botao-ataque');
   let botaoDistribuir = document.getElementById('botao-distribuir');
-  let botaoCancelarSelecao = document.getElementById('botao-cancelar-selecao');
+  let botaoEncerrarAtaque = document.getElementById('botao-encerrar-ataque');
   let botaoFinalizarJogada = document.getElementById('botao-finalizar');
-
+  let botaoDistribuirAtaque = document.getElementById('botao-ataque-distribuir');
+  
   /*Botão que submete quantidade de jogadores*/
   let botaoSubmeteQtJogadores = document.getElementById('botao-numero-jogadores');
 
@@ -679,6 +685,8 @@
       });
 
       APIGame.selecionarPaises = [];
+      APIGame.guardarPaisesConquista = [];
+      APIGame.limiteDistribuicaoAtaque = 0;
       APIGame.alvoAnterior = false;
       APIGame.paisAnterior = false;
       
@@ -714,6 +722,7 @@
                   //return this.battle(this.prevCountry, country, this.player, 0);     
                   e.target.classList.add('flash');
                   APIGame.selecionarPaises.push(e.target);
+                  
                 }                
               });
 
@@ -729,6 +738,51 @@
     
     }
 
+    function estadoDistribuir (e) {
+
+      if (APIGame.selecionarPaises.length >= 2 ) {
+        resetSelecao();
+      }
+    
+      APIGame.countries.forEach(country => {
+
+        if(e.target.id == country.name) {
+
+          if (APIGame.alvoAnterior == false && country.owner == APIGame.jogadores[0].nome && country.army > 1) {
+            e.target.classList.add('flash');
+            APIGame.alvoAnterior = e.target;
+            APIGame.selecionarPaises.push(APIGame.alvoAnterior);
+          } else if (APIGame.alvoAnterior != false && country.owner == APIGame.jogadores[0].nome && country.army > 1) {
+            resetSelecao(); /*Se entrar nesse if, é como se eu tivesse escolhido um novo pais pra atacar e esquece do de antes */
+            e.target.classList.add('flash');
+            APIGame.alvoAnterior = e.target;
+            APIGame.selecionarPaises.push(APIGame.alvoAnterior);
+          } 
+          
+          if(APIGame.paisAnterior){
+
+            if(APIGame.paisAnterior.name != country.name && APIGame.paisAnterior.owner == country.owner && APIGame.paisAnterior.owner == APIGame.jogadores[0].nome){
+              
+              APIGame.paisAnterior.neighbours.forEach( function (neighbour, index)  { 
+                if(neighbour == country.name && APIGame.paisAnterior.army > 1){          
+                  e.target.classList.add('flash');
+                  APIGame.selecionarPaises.push(e.target);  
+                  alert("PAISES SELECIONADOS PARA DISTRIBUIÇÃO")
+                }                
+              });
+
+            }      
+          }
+
+          if (APIGame.alvoAnterior != false && APIGame.alvoAnterior.id == country.name) {
+            APIGame.paisAnterior = country;
+          }
+          
+        }
+      });   
+      
+    }
+
     function algoritmoCorJogador (arrayCoresTemp) {
       let indexCor = APIGame.algoritmoRandomico(0, arrayCoresTemp.length-1);
       let infoCor = arrayCoresTemp[indexCor];
@@ -739,7 +793,7 @@
     function handleClick(e){
       
       if(APIGame.estado == "Distribuir"){
-  
+        estadoDistribuir(e);
       }else if(APIGame.estado == "Ataque"){
         estadoAtaque(e);
       }else if (APIGame.estado == "Fortificar") {
@@ -763,11 +817,200 @@
 
     function algoritmoAtaque () {
       if (APIGame.estado == "Ataque") {
-         //FAZER O ALGORITMO DE ATAQUE !!!!!!!!!!!!!!
+        //FAZER O ALGORITMO DE ATAQUE !!!!!!!!!!!!!!
+        console.log(APIGame.selecionarPaises);
+        let indexPaisAtaque;
+        let indexJogadorAtaque;
+        let indexPaisDefesa;
+        let indexJogadorDefesa;
+       
+
+        APIGame.jogadores.forEach(function (jogador, indexJogador) {
+          jogador.territorios.forEach (function (pais, indexPais) {
+            if (pais.name == APIGame.selecionarPaises[0].id) {
+              indexJogadorAtaque = indexJogador;
+              indexPaisAtaque = indexPais;
+            } else if (pais.name == APIGame.selecionarPaises[1].id) {
+              indexJogadorDefesa = indexJogador;
+              indexPaisDefesa = indexPais;
+            }
+          })
+        })
+
+        if (APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque].owner != APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa].owner) {
+          
+
+        let arrayDadoAtaque = []
+        let arrayDadoDefesa = []
+
+        if (APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque].army == 2) {
+          arrayDadoAtaque.push(APIGame.algoritmoRandomico(1,6));
+          arrayDadoAtaque.push(APIGame.algoritmoRandomico(1,6));
+        }else if (APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque].army > 2) {
+          arrayDadoAtaque.push(APIGame.algoritmoRandomico(1,6));
+          arrayDadoAtaque.push(APIGame.algoritmoRandomico(1,6));
+          arrayDadoAtaque.push(APIGame.algoritmoRandomico(1,6));
+        }
+
+
+        if (APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa].army == 1) {
+          arrayDadoDefesa.push(APIGame.algoritmoRandomico(1,6));
+        }else if (APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa].army == 2) {
+          arrayDadoDefesa.push(APIGame.algoritmoRandomico(1,6));
+          arrayDadoDefesa.push(APIGame.algoritmoRandomico(1,6));
+        }else if (APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa].army > 2) {
+          arrayDadoDefesa.push(APIGame.algoritmoRandomico(1,6));
+          arrayDadoDefesa.push(APIGame.algoritmoRandomico(1,6));
+          arrayDadoDefesa.push(APIGame.algoritmoRandomico(1,6));
+        }
+
+        arrayDadoAtaque.sort(function(a, b){return b - a}); /* Ordena a vez de acordo com a cor do jogador*/
+        arrayDadoDefesa.sort(function(a, b){return b - a});
+
+        let indexLimite = arrayDadoDefesa.length - 1;
+
+      if (arrayDadoAtaque.length > 0 ) {
+
+        for (let index = 0; index <= indexLimite; index++) {
+          if (arrayDadoDefesa[index] >= arrayDadoAtaque[index]) {
+            APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque].army--;
+          }else {
+            APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa].army--;
+          }
+          
+        }
+
+        if (APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa].army == 0) {
+
+          // alterando cor do país que perdeu a batalha
+          APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa].color = APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque].color;
+
+          // alterando o proprietario do país que perdeu a batalha
+          APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa].owner = APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque].owner;
+
+          APIGame.guardarPaisesConquista[0] = APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque];
+          APIGame.guardarPaisesConquista[1] = APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa];
+
+          // indexando o país que perdeu a batalha para o seu novo dono. 
+          APIGame.jogadores[indexJogadorAtaque].territorios.push(APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa]);
+
+          // removendo o país do antigo dono.
+          APIGame.jogadores[indexJogadorDefesa].territorios.splice(indexPaisDefesa,1);
+
+          APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque].army--;
+          APIGame.jogadores[indexJogadorAtaque].territorios[APIGame.jogadores[indexJogadorAtaque].territorios.length - 1].army = 1;
+
+          console.log(APIGame.jogadores[indexJogadorAtaque]);
+          console.log(APIGame.jogadores[indexJogadorDefesa]);
+
+          /*Mostrando alterações na tela */
+          APIGame.selecionarPaises[1].style.fill = APIGame.jogadores[indexJogadorAtaque].cor.hexadecimal;
+
+          APIGame.selecionarPaises[0].nextElementSibling.textContent = APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque].army;
+
+          APIGame.selecionarPaises[1].nextElementSibling.textContent = 1;
+
+
+        }else {
+
+          APIGame.selecionarPaises[0].nextElementSibling.textContent = APIGame.jogadores[indexJogadorAtaque].territorios[indexPaisAtaque].army;
+
+          APIGame.selecionarPaises[1].nextElementSibling.textContent = APIGame.jogadores[indexJogadorDefesa].territorios[indexPaisDefesa].army;
+
+        }
+
+     
+        
+      }else {
+        alert("Quantidade de tropa insuficiente");
+      }
+
+    }else {
+      alert("Esse país já é seu");
+    }  
+
+       
+  
       }else {
         alert("NECESSÁRIO ESTAR NA FASE DE ATAQUE");
       }
 
+    }
+
+    function algoritmoDistribuicao () {
+      if (APIGame.estado == "Distribuir") {
+        let indexPaisFornecedor;  
+        let indexJogador; 
+        let indexPaisRecebedor;
+
+        APIGame.jogadores.forEach(function (jogador, index) {
+          jogador.territorios.forEach (function (pais, indexPais) {
+            if (pais.name == APIGame.selecionarPaises[0].id) {
+              indexJogador = index;
+              indexPaisFornecedor = indexPais;
+            } else if (pais.name == APIGame.selecionarPaises[1].id) {
+              indexPaisRecebedor = indexPais;
+            }
+          })
+        });
+
+        if (APIGame.jogadores[indexJogador].territorios[indexPaisFornecedor].owner == APIGame.jogadores[indexJogador].territorios[indexPaisRecebedor].owner) {
+
+          if (APIGame.jogadores[indexJogador].territorios[indexPaisFornecedor].army > 1) {
+            APIGame.jogadores[indexJogador].territorios[indexPaisFornecedor].army--;
+            APIGame.jogadores[indexJogador].territorios[indexPaisRecebedor].army++;
+
+            APIGame.selecionarPaises[0].nextElementSibling.textContent = APIGame.jogadores[indexJogador].territorios[indexPaisFornecedor].army;
+
+            APIGame.selecionarPaises[1].nextElementSibling.textContent = APIGame.jogadores[indexJogador].territorios[indexPaisRecebedor].army;
+
+          }
+
+        }
+
+      }else {
+        alert("NECESSÁRIO ESTAR NA FASE DE DISTRIBUIÇÃO");
+      }
+
+    }
+
+    function alterarEstadoDistribuicao() {
+      APIGame.estado = "Distribuir";
+      divInfoJogador.children[1].textContent = `Fase: ${APIGame.estado}`;
+      resetSelecao();
+      alert("Estado de distribuir");
+    }
+
+    function distribuirTropasAtaque (e) {
+      if (APIGame.estado == "Ataque" && APIGame.limiteDistribuicaoAtaque < 2 && APIGame.guardarPaisesConquista.length == 2 && APIGame.guardarPaisesConquista[0].army > 1) {
+        APIGame.limiteDistribuicaoAtaque++;
+
+        APIGame.guardarPaisesConquista[0].army--;
+        APIGame.guardarPaisesConquista[1].army++;
+        let indexConquistador;
+        let indexConquistado;
+
+        APIGame.jogadores[0].territorios.forEach(function (pais, index) {
+          if (APIGame.guardarPaisesConquista[0].name == pais.name) {
+            APIGame.jogadores[0].territorios[index] =  APIGame.guardarPaisesConquista[0];
+            indexConquistador = index;
+          }else if (APIGame.guardarPaisesConquista[1].name == pais.name) {
+            APIGame.jogadores[0].territorios[index] =  APIGame.guardarPaisesConquista[1];
+            indexConquistado = index;
+          }
+        });
+
+        APIGame.selecionarPaises[0].nextElementSibling.textContent = APIGame.jogadores[0].territorios[indexConquistador].army;
+
+        APIGame.selecionarPaises[1].nextElementSibling.textContent = APIGame.jogadores[0].territorios[indexConquistado].army;
+
+        if (APIGame.limiteDistribuicaoAtaque == 2) {
+          APIGame.limiteDistribuicaoAtaque = 0;
+          APIGame.guardarPaisesConquista = [];
+        }
+        
+
+      }
     }
 
 
@@ -776,6 +1019,9 @@
   botaoFinalizarJogada.addEventListener("click", finalizarTurno);
   mapa.addEventListener("mousedown", handleClick);
   botaoAtaque.addEventListener("click", algoritmoAtaque);
+  botaoEncerrarAtaque.addEventListener("click", alterarEstadoDistribuicao)
+  botaoDistribuir.addEventListener("click", algoritmoDistribuicao);
+  botaoDistribuirAtaque.addEventListener("click", distribuirTropasAtaque)
     
   /*Alterando cor de borda do país.*/
   paises.forEach(function (pais) {

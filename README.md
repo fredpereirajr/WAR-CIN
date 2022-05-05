@@ -6,7 +6,7 @@ A base do projeto (mapa, jogadores, distribuição dos paises igualitariamente e
 
 primeira rodada (RESTRIÇÃO pois só tem a fase de fortificação).
 
-demais rodadas 
+demais rodadas (estados de fortificação, ataque e distribuição)
 
 Estado de fortificação.
 

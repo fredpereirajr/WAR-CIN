@@ -14,11 +14,12 @@
   <div id="content-config">
       <label for="">N° de jogadores</label>
       <input id="input-numero-jogadores" type="number">
-      <button id="botao-numero-jogadores">Submit</button>
+      <button id="botao-numero-jogadores">Enviar</button>
   </div>
 
 </section>
 
+<div id="main">
 <div id="mapaConteiner" >
 <svg id="mapa" width="749.81909" height="519.06781">
   <defs id="defs5">
@@ -368,15 +369,18 @@
   </g>
 </svg>
 
+
 <div id="controle-jogo" >
+  <h2>Painel de Controle</h2>
   <button id="botao-ataque" class="button-controle-jogo">Atacar</button>
   <button id="botao-ataque-distribuir" class="button-controle-jogo">Ataque -> Distribuir</button>
   <button id="botao-encerrar-ataque" class="button-controle-jogo">Encerrar Ataque</button>
   <button id="botao-distribuir" class="button-controle-jogo">Distribuir</button>
   <button id="botao-finalizar" class="button-controle-jogo">Próximo Jogador</button>
 </div>
-</div>
 
+
+</div>
 
 <section id="info-jogador">
   <h1>Jogador Atual</h1>
@@ -387,6 +391,9 @@
     <div>Total de Tropas</div> <!--quantidade de tropas total no jogo-->
   </div>
 </section>
+
+</div>
+
 
 
   <script type="module" >
@@ -447,10 +454,10 @@
       return Math.floor(Math.random() * (b - a + 1)) + a
     };
     APIGame.arrayCoresWar = [
-      {cor: "vermelho", hexadecimal:"#f90005", index:0},
-      {cor: "roxo", hexadecimal:"#db00eb", index:1},
+      {cor: "vermelho", hexadecimal:"#ff080d", index:0},
+      {cor: "roxo", hexadecimal:"#aa00d1", index:1},
       {cor: "preto", hexadecimal:"#000000", index:2},
-      {cor: "azul", hexadecimal:"#1300c2", index:3},
+      {cor: "azul", hexadecimal:"#1900ff", index:3},
       {cor: "laranja", hexadecimal:"#ff8000", index:4},
       {cor: "verde", hexadecimal:"#01ca00", index:5}
     ]
@@ -530,7 +537,8 @@
       APIGame.jogadores.push(new Jogador(Nomejogador, objetoCor));
     }
 
-    sectionConfig.remove(); //Remove a section de Criar jogo
+    //sectionConfig.remove(); //Remove a section de Criar jogo
+    sectionConfig.style.display = "none";
 
     APIGame.jogadores.sort(function(a, b){return b.cor.index - a.cor.index}); /* Ordena a vez de acordo com a cor do jogador*/
     
@@ -671,8 +679,6 @@
           if(APIGame.jogadores[0].tropasRodada == 0 &&  APIGame.primeiraRodada == false){
             APIGame.estado = "Ataque";
             divInfoJogador.children[1].textContent = `Fase: ${APIGame.estado}`;
-            //turnInfoMessage.textContent = "Choose a country to attack from then a target";
-            alert("FASE DE ATAQUE");
           }
         }
       })
@@ -1019,9 +1025,9 @@
   botaoFinalizarJogada.addEventListener("click", finalizarTurno);
   mapa.addEventListener("mousedown", handleClick);
   botaoAtaque.addEventListener("click", algoritmoAtaque);
-  botaoEncerrarAtaque.addEventListener("click", alterarEstadoDistribuicao)
+  botaoEncerrarAtaque.addEventListener("click", alterarEstadoDistribuicao);
   botaoDistribuir.addEventListener("click", algoritmoDistribuicao);
-  botaoDistribuirAtaque.addEventListener("click", distribuirTropasAtaque)
+  botaoDistribuirAtaque.addEventListener("click", distribuirTropasAtaque);
     
   /*Alterando cor de borda do país.*/
   paises.forEach(function (pais) {

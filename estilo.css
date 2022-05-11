@@ -3,13 +3,16 @@
     padding: 0;
 }    
 
+body {
+    background-color: rgb(177, 250, 244);;
+}
+
 #configuracao-game {
     margin-bottom: 100px;
     padding-top: 20px;
     margin-left: auto;
     margin-right: auto;
     width: 500px;
-    background-color: rgb(177, 250, 244);;
 }
 
 #configuracao-game h1 {
@@ -22,15 +25,17 @@
     background-size: cover;
     background-repeat: no-repeat;
     display: inline-block;
+    border: 5px solid rgb(0, 0, 0);
+    max-height: 524px;
 }
 
 #info-jogador {
     background-color: rgb(7, 99, 91);
     display: inline-block;
-    position: relative;
-    height: 522px;
-    bottom: 498px;
+    position: absolute;
     width: 200px;
+    height: 524px;
+    border: 5px solid rgb(0, 0, 0);
    
 }
 
@@ -42,9 +47,30 @@
     text-align: center;
 }
 
+#content-config button{
+    margin-left: 30px;
+    width: 25%;
+}
+
+#content-config {
+    text-align: center;
+}
+
+#content-config .div-input-jogadores {
+    margin-bottom: 20px;
+}
+
+
 #controle-jogo {
     display: inline-block;
-    background-color: rgb(243, 0, 0);
+    background-color: rgba(0, 105, 243, 0.226);
+}
+
+#controle-jogo h2 {
+    margin-bottom: 20px;
+    color: blanchedalmond;
+    margin-top: 20px;
+    text-align: center;
 }
 
 .flash {
@@ -62,4 +88,9 @@
 .area {
     cursor: pointer;
 }
+
+#teste {
+    background-color: aqua;
+}
+
 
